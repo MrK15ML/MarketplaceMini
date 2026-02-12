@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(dir:*)",
+      "Bash(xcopy /E /H /Y \"D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\handshake-temp\\\\*\" \"D:\\\\MarketplaceMini\\\\MarketplaceMini\"\" 2>&1 && rmdir /S /Q \"D:MarketplaceMiniMarketplaceMinihandshake-temp \")",
+      "Bash(powershell -Command:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm ls:*)",
+      "Bash(test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }
