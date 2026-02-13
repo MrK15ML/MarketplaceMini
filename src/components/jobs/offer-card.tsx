@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export function OfferCard({
   isCustomer,
   isSeller,
 }: OfferCardProps) {
+  const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +50,7 @@ export function OfferCard({
     } else {
       toast.success("Offer accepted! Deal created.");
       setConfirmOpen(false);
+      router.refresh();
     }
     setLoading(false);
   }
@@ -59,6 +62,7 @@ export function OfferCard({
       toast.error(result.error);
     } else {
       toast.success("Offer declined.");
+      router.refresh();
     }
     setLoading(false);
   }

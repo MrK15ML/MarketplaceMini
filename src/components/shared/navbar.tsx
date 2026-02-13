@@ -3,6 +3,7 @@ import { Handshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "@/components/shared/user-menu";
+import { UnreadBadge } from "@/components/shared/unread-badge";
 import type { Profile } from "@/lib/types";
 
 export async function Navbar() {
@@ -57,9 +58,10 @@ export async function Navbar() {
               </Link>
               <Link
                 href="/messages"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
               >
                 Messages
+                <UnreadBadge userId={user.id} />
               </Link>
             </>
           )}

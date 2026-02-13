@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { transitionJobStatus } from "@/lib/supabase/actions";
 import { OfferFormDialog } from "./offer-form-dialog";
@@ -20,6 +21,7 @@ export function JobActionBar({
   jobStatus,
   role,
 }: JobActionBarProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const transitions = getAvailableTransitions(
@@ -50,6 +52,7 @@ export function JobActionBar({
       toast.error(result.error);
     } else {
       toast.success(label);
+      router.refresh();
     }
     setLoading(false);
   }

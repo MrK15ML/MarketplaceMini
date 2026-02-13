@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function DealSummary({
   isCustomer,
   isSeller,
 }: DealSummaryProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleTransition(targetStatus: string) {
@@ -45,6 +47,7 @@ export function DealSummary({
           ? "Work started!"
           : "Marked as complete!"
       );
+      router.refresh();
     }
     setLoading(false);
   }

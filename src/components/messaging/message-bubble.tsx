@@ -2,15 +2,20 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import type { MessageWithSender } from "@/lib/types";
 
 interface MessageBubbleProps {
   message: MessageWithSender;
   isOwnMessage: boolean;
+  isGrouped?: boolean;
 }
 
-export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  isOwnMessage,
+  isGrouped = false,
+}: MessageBubbleProps) {
   const isSystem =
     message.message_type === "system" ||
     message.message_type === "status_change" ||
@@ -37,31 +42,46 @@ export function MessageBubble({ message, isOwnMessage }: MessageBubbleProps) {
 
   return (
     <div
-      className={cn("flex gap-2 mb-3", isOwnMessage ? "flex-row-reverse" : "")}
+      className={cn(
+        "flex gap-2 group",
+        isOwnMessage ? "flex-row-reverse" : "",
+        isGrouped ? "mt-0.5" : "mt-3"
+      )}
     >
-      <Avatar className="h-8 w-8 shrink-0">
-        <AvatarImage src={message.sender?.avatar_url ?? undefined} />
-        <AvatarFallback className="text-xs">{senderInitials}</AvatarFallback>
-      </Avatar>
-      <div
-        className={cn(
-          "max-w-[75%] rounded-lg px-3 py-2",
-          isOwnMessage
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted"
-        )}
-      >
-        <p className="text-sm whitespace-pre-wrap break-words">
-          {message.content}
-        </p>
-        <p
+      {/* Avatar or spacer */}
+      {isGrouped ? (
+        <div className="w-8 shrink-0" />
+      ) : (
+        <Avatar className="h-8 w-8 shrink-0">
+          <AvatarImage src={message.sender?.avatar_url ?? undefined} />
+          <AvatarFallback className="text-xs">{senderInitials}</AvatarFallback>
+        </Avatar>
+      )}
+
+      {/* Bubble */}
+      <div className="relative max-w-[75%]">
+        <div
           className={cn(
-            "text-[10px] mt-1",
-            isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground"
+            "rounded-lg px-3 py-2",
+            isOwnMessage
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted"
           )}
         >
-          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-        </p>
+          <p className="text-sm whitespace-pre-wrap break-words">
+            {message.content}
+          </p>
+        </div>
+
+        {/* Timestamp — visible on hover (desktop) */}
+        <div
+          className={cn(
+            "absolute -bottom-4 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none",
+            isOwnMessage ? "right-0" : "left-0"
+          )}
+        >
+          {format(new Date(message.created_at), "MMM d, h:mm a")}
+        </div>
       </div>
     </div>
   );

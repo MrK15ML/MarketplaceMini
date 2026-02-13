@@ -9,12 +9,16 @@ import { CategoryBadge } from "@/components/listings/category-badge";
 import { PriceDisplay } from "@/components/listings/price-display";
 import { JobDetailTabs } from "@/components/jobs/job-detail-tabs";
 import { JobActionBar } from "@/components/jobs/job-action-bar";
+import { JobTimeline } from "@/components/jobs/job-timeline";
+import { SellerTrustCard } from "@/components/jobs/seller-trust-card";
+import { getTimelineSteps } from "@/lib/utils/job-timeline";
 import { Calendar, MapPin, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import type {
   Profile,
   Listing,
   JobRequest,
+  JobRequestStatus,
   Offer,
   Deal,
   MessageWithSender,
@@ -32,13 +36,16 @@ export default async function JobDetailPage({ params }: { params: Params }) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: jobData } = await supabase
+  const { data: jobData, error: jobError } = await supabase
     .from("job_requests")
     .select("*")
     .eq("id", id)
     .single();
 
-  if (!jobData) notFound();
+  if (jobError || !jobData) {
+    console.error("[JobDetail] Failed to load job request:", { id, error: jobError?.message });
+    notFound();
+  }
 
   const job = jobData as JobRequest;
 
@@ -59,6 +66,7 @@ export default async function JobDetailPage({ params }: { params: Params }) {
     { data: offersData },
     { data: dealData },
     { data: messagesData },
+    { count: sellerCompletedDeals },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", job.customer_id).single(),
     supabase.from("profiles").select("*").eq("id", job.seller_id).single(),
@@ -73,12 +81,17 @@ export default async function JobDetailPage({ params }: { params: Params }) {
       .select("*")
       .eq("job_request_id", id)
       .limit(1)
-      .single(),
+      .maybeSingle(),
     supabase
       .from("messages")
       .select("*, sender:profiles!sender_id(*)")
       .eq("job_request_id", id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("seller_id", job.seller_id)
+      .eq("status", "completed"),
   ]);
 
   const customer = customerData as Profile | null;
@@ -96,7 +109,7 @@ export default async function JobDetailPage({ params }: { params: Params }) {
       .select("id")
       .eq("deal_id", deal.id)
       .eq("reviewer_id", user.id)
-      .single();
+      .maybeSingle();
     hasReviewed = !!existingReview;
   }
 
@@ -123,11 +136,18 @@ export default async function JobDetailPage({ params }: { params: Params }) {
           </div>
           {listing && <CategoryBadge category={listing.category} />}
         </div>
-        <JobActionBar
-          jobRequestId={id}
-          jobStatus={job.status}
-          role={role}
-        />
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur md:static md:bg-transparent md:backdrop-blur-none">
+          <JobActionBar
+            jobRequestId={id}
+            jobStatus={job.status}
+            role={role}
+          />
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <div className="mb-6">
+        <JobTimeline steps={getTimelineSteps(job.status as JobRequestStatus)} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -188,6 +208,7 @@ export default async function JobDetailPage({ params }: { params: Params }) {
               jobRequestId={id}
               initialStatus={job.status}
               currentUserId={user.id}
+              currentUserName={isCustomer ? customer.display_name : seller.display_name}
               isCustomer={isCustomer}
               isSeller={isSeller}
               initialMessages={messages}
@@ -261,6 +282,13 @@ export default async function JobDetailPage({ params }: { params: Params }) {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {isCustomer && seller && (
+            <SellerTrustCard
+              seller={seller}
+              completedDealsCount={sellerCompletedDeals ?? 0}
+            />
           )}
         </div>
       </div>

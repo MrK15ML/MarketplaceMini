@@ -22,7 +22,6 @@ export default async function MessagesPage() {
     .from("job_requests")
     .select("*")
     .or(`customer_id.eq.${user.id},seller_id.eq.${user.id}`)
-    .not("status", "in", '("cancelled","declined")')
     .order("updated_at", { ascending: false });
 
   const jobs = (jobsData ?? []) as JobRequest[];

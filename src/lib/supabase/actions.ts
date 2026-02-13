@@ -359,6 +359,22 @@ export async function transitionJobStatus(input: {
       .eq("status", "active");
   }
 
+  if (input.targetStatus === "cancelled") {
+    // Cancel any active deals
+    await supabase
+      .from("deals")
+      .update({ status: "cancelled" })
+      .eq("job_request_id", input.jobRequestId)
+      .eq("status", "active");
+
+    // Supersede any pending offers
+    await supabase
+      .from("offers")
+      .update({ status: "superseded" })
+      .eq("job_request_id", input.jobRequestId)
+      .eq("status", "pending");
+  }
+
   // System message
   const statusLabels: Record<string, string> = {
     clarifying: "Discussion started",
@@ -518,6 +534,28 @@ export async function submitReport(input: {
     reason: input.reason,
     description: input.description || null,
   });
+
+  if (error) return { error: error.message };
+  return {};
+}
+
+// ============================================
+// Message Read Tracking
+// ============================================
+
+export async function markMessagesAsRead(input: { jobRequestId: string }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("messages")
+    .update({ read_at: new Date().toISOString() })
+    .eq("job_request_id", input.jobRequestId)
+    .neq("sender_id", user.id)
+    .is("read_at", null);
 
   if (error) return { error: error.message };
   return {};

@@ -13,7 +13,28 @@
       "Bash(npm ls:*)",
       "Bash(test:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File D:MarketplaceMiniMarketplaceMinitest-pages.ps1)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\test-pages.ps1\")",
+      "WebFetch(domain:localhost)",
+      "Bash(powershell.exe:*)",
+      "Bash(del \"D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\test-pages.ps1\")",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx next build:*)",
+      "Bash(ls:*)",
+      "Bash(kill:*)",
+      "Bash(npx next dev --port 3001)",
+      "Bash(cmd.exe /c 'del \\\\\\\\?\\\\D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\nul')",
+      "Bash(python3 -c \"import os; os.remove\\(r''\\\\\\\\?\\\\D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\nul''\\)\")",
+      "Bash(node -e \"const fs = require\\(''fs''\\); fs.unlinkSync\\(''\\\\\\\\\\\\\\\\?\\\\\\\\D:\\\\\\\\MarketplaceMini\\\\\\\\MarketplaceMini\\\\\\\\nul''\\)\")",
+      "Bash(node -e \"const fs = require\\(''fs''\\); fs.unlinkSync\\(String.raw\\\\`\\\\\\\\?\\\\D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\nul\\\\`\\)\")",
+      "Bash(cmd.exe /c \"del /f /q \"\"\\\\\\\\?\\\\D:\\\\MarketplaceMini\\\\MarketplaceMini\\\\nul\"\"\")",
+      "Bash(for f in \"D:/MarketplaceMini/MarketplaceMini/src/components/jobs/job-timeline.tsx\" \"D:/MarketplaceMini/MarketplaceMini/src/components/jobs/seller-trust-card.tsx\" \"D:/MarketplaceMini/MarketplaceMini/src/components/messaging/typing-indicator.tsx\" \"D:/MarketplaceMini/MarketplaceMini/src/components/messaging/chat-skeleton.tsx\" \"D:/MarketplaceMini/MarketplaceMini/src/components/shared/unread-badge.tsx\" \"D:/MarketplaceMini/MarketplaceMini/src/lib/hooks/use-typing-indicator.ts\" \"D:/MarketplaceMini/MarketplaceMini/src/lib/hooks/use-unread-count.ts\" \"D:/MarketplaceMini/MarketplaceMini/src/lib/utils/job-timeline.ts\")",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(done)"
     ]
   }
 }

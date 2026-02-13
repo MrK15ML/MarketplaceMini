@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/jobs/status-badge";
 import { CategoryBadge } from "@/components/listings/category-badge";
 import { JobRequestForm } from "@/components/jobs/job-request-form";
+import { MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { Listing } from "@/lib/types";
 
@@ -61,6 +62,25 @@ export default async function JobsPage({
       .order("created_at", { ascending: false }),
   ]);
 
+  // Fetch unread message counts per job
+  const allJobs = [...(asCustomer ?? []), ...(asSeller ?? [])];
+  const unreadByJob: Record<string, number> = {};
+
+  if (allJobs.length > 0) {
+    const { data: unreadData } = await supabase
+      .from("messages")
+      .select("job_request_id")
+      .neq("sender_id", user.id)
+      .is("read_at", null);
+
+    if (unreadData) {
+      for (const row of unreadData) {
+        const jrId = (row as { job_request_id: string }).job_request_id;
+        unreadByJob[jrId] = (unreadByJob[jrId] || 0) + 1;
+      }
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1">Jobs</h1>
@@ -82,6 +102,7 @@ export default async function JobsPage({
           <JobList
             jobs={asCustomer ?? []}
             nameField="seller"
+            unreadByJob={unreadByJob}
             emptyMessage="You haven't sent any job requests yet. Browse listings to get started."
           />
         </TabsContent>
@@ -90,6 +111,7 @@ export default async function JobsPage({
           <JobList
             jobs={asSeller ?? []}
             nameField="customer"
+            unreadByJob={unreadByJob}
             emptyMessage="No incoming job requests yet."
           />
         </TabsContent>
@@ -101,10 +123,12 @@ export default async function JobsPage({
 function JobList({
   jobs,
   nameField,
+  unreadByJob,
   emptyMessage,
 }: {
   jobs: Array<Record<string, unknown>>;
   nameField: string;
+  unreadByJob: Record<string, number>;
   emptyMessage: string;
 }) {
   if (jobs.length === 0) {
@@ -116,6 +140,7 @@ function JobList({
       {jobs.map((job) => {
         const listing = job.listing as { title: string; category: string } | null;
         const person = job[nameField] as { display_name: string } | null;
+        const unread = unreadByJob[job.id as string] ?? 0;
 
         return (
           <Link key={job.id as string} href={`/jobs/${job.id}`}>
@@ -128,6 +153,12 @@ function JobList({
                         {listing?.title ?? "Unknown listing"}
                       </h3>
                       <StatusBadge status={job.status as string} />
+                      {unread > 0 && (
+                        <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+                          <MessageSquare className="h-3 w-3" />
+                          {unread}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-1">
                       {job.description as string}
