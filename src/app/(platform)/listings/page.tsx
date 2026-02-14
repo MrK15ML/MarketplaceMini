@@ -1,16 +1,33 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ListingCard } from "@/components/listings/listing-card";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListingCardSkeleton } from "@/components/listings/listing-card-skeleton";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ListingWithSeller } from "@/lib/types";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Browse Services | Handshake",
+  description: "Find trusted service providers in Wellington. Browse odd jobs, skilled trades, tutoring, remote services, and more on Handshake.",
+  openGraph: {
+    title: "Browse Services | Handshake",
+    description: "Find trusted service providers in Wellington. Browse odd jobs, skilled trades, tutoring, remote services, and more.",
+    type: "website",
+  },
+};
+
+const PAGE_SIZE = 12;
 
 type SearchParams = Promise<{
   category?: string;
   q?: string;
   remote?: string;
   sort?: string;
+  page?: string;
 }>;
 
 export default async function ListingsPage({
@@ -39,6 +56,7 @@ export default async function ListingsPage({
           search={params.q}
           remote={params.remote}
           sort={params.sort}
+          page={params.page}
         />
       </Suspense>
     </div>
@@ -50,17 +68,21 @@ async function ListingGrid({
   search,
   remote,
   sort,
+  page,
 }: {
   category?: string;
   search?: string;
   remote?: string;
   sort?: string;
+  page?: string;
 }) {
   const supabase = await createClient();
+  const currentPage = Math.max(1, parseInt(page ?? "1", 10) || 1);
+  const offset = (currentPage - 1) * PAGE_SIZE;
 
   let query = supabase
     .from("listings")
-    .select("*, profiles(*)")
+    .select("*, profiles(*)", { count: "exact" })
     .eq("is_active", true);
 
   if (category) {
@@ -100,7 +122,7 @@ async function ListingGrid({
       break;
   }
 
-  const { data, error } = await query.limit(50);
+  const { data, error, count } = await query.range(offset, offset + PAGE_SIZE - 1);
 
   if (error) {
     return (
@@ -111,6 +133,8 @@ async function ListingGrid({
   }
 
   const listings = (data ?? []) as unknown as ListingWithSeller[];
+  const totalCount = count ?? 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   if (listings.length === 0) {
     return (
@@ -123,15 +147,97 @@ async function ListingGrid({
     );
   }
 
+  // Build pagination URLs preserving current filters
+  function buildPageUrl(p: number) {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (search) params.set("q", search);
+    if (remote) params.set("remote", remote);
+    if (sort) params.set("sort", sort);
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return `/listings${qs ? `?${qs}` : ""}`;
+  }
+
   return (
-    <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-      {listings.map((listing) => (
-        <ListingCard
-          key={listing.id}
-          listing={listing}
-        />
-      ))}
-    </div>
+    <>
+      {/* Results count */}
+      <div className="text-sm text-muted-foreground mb-4">
+        Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, totalCount)} of {totalCount} services
+      </div>
+
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {listings.map((listing) => (
+          <ListingCard
+            key={listing.id}
+            listing={listing}
+          />
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-8">
+          {currentPage > 1 ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={buildPageUrl(currentPage - 1)}>
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+          )}
+
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .map((p, idx, arr) => {
+                const elements = [];
+                if (idx > 0 && arr[idx - 1] !== p - 1) {
+                  elements.push(
+                    <span key={`ellipsis-${p}`} className="px-2 text-muted-foreground text-sm">...</span>
+                  );
+                }
+                elements.push(
+                  <Button
+                    key={p}
+                    variant={p === currentPage ? "default" : "outline"}
+                    size="sm"
+                    className="w-9 h-9 p-0"
+                    asChild={p !== currentPage}
+                  >
+                    {p === currentPage ? (
+                      <span>{p}</span>
+                    ) : (
+                      <Link href={buildPageUrl(p)}>{p}</Link>
+                    )}
+                  </Button>
+                );
+                return elements;
+              })
+              .flat()}
+          </div>
+
+          {currentPage < totalPages ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href={buildPageUrl(currentPage + 1)}>
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" disabled>
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 

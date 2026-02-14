@@ -14,9 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Handshake — Service Marketplace",
+  title: {
+    default: "Handshake — Wellington's Trusted Service Marketplace",
+    template: "%s | Handshake",
+  },
   description:
-    "A P2P marketplace where providers list services with qualifications, and customers browse, negotiate, and agree through a structured handshake protocol.",
+    "Find trusted service providers in Wellington. Browse, negotiate directly, and seal the deal with a structured handshake. No middleman fees, no surprises.",
+  keywords: ["services", "marketplace", "Wellington", "New Zealand", "handyman", "tutoring", "freelancer"],
+  openGraph: {
+    type: "website",
+    locale: "en_NZ",
+    siteName: "Handshake",
+    title: "Handshake — Wellington's Trusted Service Marketplace",
+    description: "Find trusted service providers in Wellington. Browse, negotiate directly, and seal the deal.",
+  },
+  twitter: {
+    card: "summary",
+    title: "Handshake — Wellington's Trusted Service Marketplace",
+    description: "Find trusted service providers in Wellington.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

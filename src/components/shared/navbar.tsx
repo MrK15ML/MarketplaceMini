@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "@/components/shared/user-menu";
 import { UnreadBadge } from "@/components/shared/unread-badge";
+import { MobileNav } from "@/components/shared/mobile-nav";
 import type { Profile } from "@/lib/types";
 
 export async function Navbar() {
@@ -71,7 +72,7 @@ export async function Navbar() {
           {user && profile ? (
             <UserMenu profile={profile} />
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <Button variant="ghost" asChild>
                 <Link href="/login">Log in</Link>
               </Button>
@@ -80,6 +81,7 @@ export async function Navbar() {
               </Button>
             </div>
           )}
+          <MobileNav profile={profile} />
         </div>
       </div>
     </header>

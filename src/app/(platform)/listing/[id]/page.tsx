@@ -18,8 +18,45 @@ import {
 import { ReportDialog } from "@/components/shared/report-dialog";
 import { TrustProfileCard } from "@/components/profiles/trust-profile-card";
 import type { Listing, Profile, Qualification } from "@/lib/types";
+import type { Metadata } from "next";
 
 type Params = Promise<{ id: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data } = await supabase
+    .from("listings")
+    .select("title, description, category, cover_image_url, profiles(display_name, location_city)")
+    .eq("id", id)
+    .single();
+
+  if (!data) {
+    return { title: "Listing Not Found | Handshake" };
+  }
+
+  const listing = data as { title: string; description: string; category: string; cover_image_url: string | null; profiles: { display_name: string; location_city: string | null } | null };
+  const sellerName = listing.profiles?.display_name ?? "Provider";
+  const location = listing.profiles?.location_city ?? "New Zealand";
+  const description = `${listing.title} by ${sellerName} in ${location}. ${listing.description.slice(0, 140)}`;
+
+  return {
+    title: `${listing.title} | Handshake`,
+    description,
+    openGraph: {
+      title: listing.title,
+      description,
+      type: "website",
+      ...(listing.cover_image_url ? { images: [{ url: listing.cover_image_url, width: 1200, height: 630 }] } : {}),
+    },
+    twitter: {
+      card: listing.cover_image_url ? "summary_large_image" : "summary",
+      title: listing.title,
+      description,
+    },
+  };
+}
 
 export default async function ListingDetailPage({
   params,
@@ -43,6 +80,7 @@ export default async function ListingDetailPage({
     { data: sellerData },
     { data: qualificationsData },
     { data: { user } },
+    { data: moreListingsData },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -54,16 +92,19 @@ export default async function ListingDetailPage({
       .select("*")
       .or(`user_id.eq.${listing.seller_id},listing_id.eq.${listing.id}`),
     supabase.auth.getUser(),
+    supabase
+      .from("listings")
+      .select("id, title, category, pricing_type, price_fixed, price_min, price_max, currency, cover_image_url")
+      .eq("seller_id", listing.seller_id)
+      .eq("is_active", true)
+      .neq("id", listing.id)
+      .limit(3),
   ]);
 
   const seller = sellerData as Profile | null;
 
-  // Fire-and-forget view count increment (atomic)
-  supabase
-    .from("listings")
-    .update({ view_count: (listing.view_count || 0) + 1 })
-    .eq("id", id)
-    .then(() => {});
+  // Fire-and-forget atomic view count increment
+  supabase.rpc("increment_listing_view_count", { p_listing_id: id }).then(() => {});
   const qualifications = (qualificationsData ?? []) as Qualification[];
 
   if (!seller) notFound();
@@ -196,6 +237,40 @@ export default async function ListingDetailPage({
           )}
         </div>
       </div>
+
+      {/* More from this seller */}
+      {moreListingsData && moreListingsData.length > 0 && (
+        <div className="mt-10">
+          <Separator className="mb-8" />
+          <h2 className="font-semibold text-lg mb-4">
+            More from {seller.display_name}
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {moreListingsData.map((item) => {
+              const ml = item as { id: string; title: string; category: string; pricing_type: string; price_fixed: number | null; price_min: number | null; price_max: number | null; currency: string; cover_image_url: string | null };
+              return (
+                <Link key={ml.id} href={`/listing/${ml.id}`}>
+                  <Card className="hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 h-full overflow-hidden">
+                    {ml.cover_image_url ? (
+                      <div className="relative h-32 w-full">
+                        <Image src={ml.cover_image_url} alt={ml.title} fill className="object-cover" sizes="(max-width: 640px) 100vw, 33vw" />
+                      </div>
+                    ) : (
+                      <div className="h-24 bg-muted/50 flex items-center justify-center">
+                        <CategoryBadge category={ml.category} />
+                      </div>
+                    )}
+                    <CardContent className="p-4">
+                      <h3 className="font-medium text-sm line-clamp-1 mb-1">{ml.title}</h3>
+                      <PriceDisplay pricingType={ml.pricing_type} priceFixed={ml.price_fixed} priceMin={ml.price_min} priceMax={ml.price_max} currency={ml.currency} />
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

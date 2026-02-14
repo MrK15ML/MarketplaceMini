@@ -3,13 +3,20 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Wifi } from "lucide-react";
+import { Star, MapPin, Wifi, BadgeCheck, Clock, Sparkles } from "lucide-react";
 import { CategoryBadge } from "@/components/listings/category-badge";
 import { PriceDisplay } from "@/components/listings/price-display";
 import { ListingTags } from "@/components/listings/listing-tags";
 import { TrustTierBadge } from "@/components/profiles/trust-tier-badge";
 import { getCategoryConfig } from "@/lib/constants/categories";
 import type { ListingWithSeller } from "@/lib/types";
+
+function formatResponseTime(hours: number): string {
+  if (hours < 1) return "< 1h response";
+  if (hours < 24) return `~${Math.round(hours)}h response`;
+  const days = Math.round(hours / 24);
+  return `~${days}d response`;
+}
 
 export function ListingCard({ listing }: { listing: ListingWithSeller }) {
   const seller = listing.profiles;
@@ -22,6 +29,9 @@ export function ListingCard({ listing }: { listing: ListingWithSeller }) {
 
   const catConfig = getCategoryConfig(listing.category);
   const CatIcon = catConfig?.icon;
+
+  // "New" if created within last 7 days
+  const isNew = Date.now() - new Date(listing.created_at).getTime() < 7 * 24 * 60 * 60 * 1000;
 
   return (
     <Link href={`/listing/${listing.id}`}>
@@ -82,10 +92,16 @@ export function ListingCard({ listing }: { listing: ListingWithSeller }) {
                 <AvatarFallback className="text-xs">{initials}</AvatarFallback>
               </Avatar>
               <span className="text-sm">{seller.display_name}</span>
+              {seller.is_verified && (
+                <BadgeCheck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+              )}
               {seller.avg_rating > 0 && (
                 <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
                   <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                   {Number(seller.avg_rating).toFixed(1)}
+                  {seller.total_reviews > 0 && (
+                    <span className="ml-0.5">({seller.total_reviews})</span>
+                  )}
                 </span>
               )}
               <TrustTierBadge
@@ -110,11 +126,26 @@ export function ListingCard({ listing }: { listing: ListingWithSeller }) {
             </div>
           </div>
 
-          {listing.requires_license && (
-            <Badge variant="outline" className="mt-3 text-xs">
-              Licensed — {listing.license_type}
-            </Badge>
-          )}
+          {/* Trust signals row */}
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            {isNew && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                <Sparkles className="h-3 w-3" />
+                New
+              </span>
+            )}
+            {seller.avg_response_hours != null && seller.avg_response_hours > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {formatResponseTime(seller.avg_response_hours)}
+              </span>
+            )}
+            {listing.requires_license && (
+              <Badge variant="outline" className="text-xs py-0 h-5">
+                Licensed — {listing.license_type}
+              </Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
     </Link>

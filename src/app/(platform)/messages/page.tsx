@@ -3,11 +3,26 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/jobs/status-badge";
 import { MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import type { Profile, JobRequest, Message, Listing } from "@/lib/types";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Messages | Handshake",
+  description: "Your conversations from job requests on Handshake.",
+};
+
+type ConversationRow = {
+  id: string;
+  status: string;
+  customer_id: string;
+  seller_id: string;
+  updated_at: string;
+  listing: { title: string } | null;
+  customer: { id: string; display_name: string; avatar_url: string | null } | null;
+  seller: { id: string; display_name: string; avatar_url: string | null } | null;
+};
 
 export default async function MessagesPage() {
   const supabase = await createClient();
@@ -17,70 +32,66 @@ export default async function MessagesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Get all job requests where user is a participant
+  // Single query with joins — replaces N+1 pattern
   const { data: jobsData } = await supabase
     .from("job_requests")
-    .select("*")
+    .select(`
+      id, status, customer_id, seller_id, updated_at,
+      listing:listings(title),
+      customer:profiles!customer_id(id, display_name, avatar_url),
+      seller:profiles!seller_id(id, display_name, avatar_url)
+    `)
     .or(`customer_id.eq.${user.id},seller_id.eq.${user.id}`)
     .order("updated_at", { ascending: false });
 
-  const jobs = (jobsData ?? []) as JobRequest[];
+  const jobs = (jobsData ?? []) as unknown as ConversationRow[];
 
-  // For each job, get the other party's profile, listing title, and latest message
-  const conversations = await Promise.all(
-    jobs.map(async (job) => {
-      const otherPartyId =
-        job.customer_id === user.id ? job.seller_id : job.customer_id;
+  // Batch fetch latest messages and unread counts for all jobs in 2 queries
+  const jobIds = jobs.map((j) => j.id);
 
-      const [{ data: profileData }, { data: listingData }, { data: lastMsgData }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", otherPartyId)
-            .single(),
-          supabase
-            .from("listings")
-            .select("title")
-            .eq("id", job.listing_id)
-            .single(),
-          supabase
-            .from("messages")
-            .select("*")
-            .eq("job_request_id", job.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single(),
-        ]);
+  // Get latest message per job — use a single query ordered by created_at desc
+  // and then pick the first per job_request_id client-side
+  const [{ data: messagesData }, { data: unreadData }] = await Promise.all([
+    jobIds.length > 0
+      ? supabase
+          .from("messages")
+          .select("job_request_id, content, message_type, created_at")
+          .in("job_request_id", jobIds)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+    jobIds.length > 0
+      ? supabase
+          .from("messages")
+          .select("job_request_id")
+          .in("job_request_id", jobIds)
+          .neq("sender_id", user.id)
+          .is("read_at", null)
+      : Promise.resolve({ data: [] }),
+  ]);
 
-      const otherParty = profileData as Profile | null;
-      const listing = listingData as { title: string } | null;
-      const lastMessage = lastMsgData as Message | null;
+  // Build lookup maps
+  const latestMessageMap = new Map<string, { content: string; message_type: string; created_at: string }>();
+  for (const msg of messagesData ?? []) {
+    if (!latestMessageMap.has(msg.job_request_id)) {
+      latestMessageMap.set(msg.job_request_id, msg);
+    }
+  }
 
-      // Count unread messages
-      const { count } = await supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("job_request_id", job.id)
-        .neq("sender_id", user.id)
-        .is("read_at", null);
+  const unreadCountMap = new Map<string, number>();
+  for (const msg of unreadData ?? []) {
+    unreadCountMap.set(msg.job_request_id, (unreadCountMap.get(msg.job_request_id) ?? 0) + 1);
+  }
 
-      return {
-        job,
-        otherParty,
-        listingTitle: listing?.title ?? "Unknown Listing",
-        lastMessage,
-        unreadCount: count ?? 0,
-      };
+  // Sort by latest message time, then job updated_at
+  const sorted = jobs
+    .map((job) => {
+      const otherParty = job.customer_id === user.id ? job.seller : job.customer;
+      const lastMessage = latestMessageMap.get(job.id);
+      const unreadCount = unreadCountMap.get(job.id) ?? 0;
+      const sortTime = lastMessage?.created_at ?? job.updated_at;
+      return { job, otherParty, listingTitle: job.listing?.title ?? "Unknown Listing", lastMessage, unreadCount, sortTime };
     })
-  );
-
-  // Sort by last message time, then by job updated_at
-  const sorted = conversations.sort((a, b) => {
-    const aTime = a.lastMessage?.created_at ?? a.job.updated_at;
-    const bTime = b.lastMessage?.created_at ?? b.job.updated_at;
-    return new Date(bTime).getTime() - new Date(aTime).getTime();
-  });
+    .sort((a, b) => new Date(b.sortTime).getTime() - new Date(a.sortTime).getTime());
 
   return (
     <div>
@@ -142,9 +153,7 @@ export default async function MessagesPage() {
                       </p>
                       {lastMessage && (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {lastMessage.message_type === "text"
-                            ? lastMessage.content
-                            : lastMessage.content}
+                          {lastMessage.content}
                         </p>
                       )}
                     </div>

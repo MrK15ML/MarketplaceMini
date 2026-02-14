@@ -676,6 +676,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      increment_listing_view_count: {
+        Args: { p_listing_id: string };
+        Returns: undefined;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

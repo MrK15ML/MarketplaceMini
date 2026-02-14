@@ -10,8 +10,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReportDialog } from "@/components/shared/report-dialog";
 import { RatingBreakdown } from "@/components/reviews/rating-breakdown";
 import type { Profile, ListingWithSeller, ReviewWithReviewer, Qualification } from "@/lib/types";
+import type { Metadata } from "next";
 
 type Params = Promise<{ id: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name, bio, location_city, avg_rating, total_reviews")
+    .eq("id", id)
+    .single();
+
+  if (!data) return { title: "Profile Not Found" };
+
+  const profile = data as { display_name: string; bio: string | null; location_city: string | null; avg_rating: number; total_reviews: number };
+  const description = profile.bio
+    ? `${profile.display_name} — ${profile.bio.slice(0, 140)}`
+    : `${profile.display_name} on Handshake${profile.location_city ? ` in ${profile.location_city}` : ""}.${profile.total_reviews > 0 ? ` ${profile.avg_rating.toFixed(1)} rating from ${profile.total_reviews} reviews.` : ""}`;
+
+  return {
+    title: profile.display_name,
+    description,
+    openGraph: {
+      title: `${profile.display_name} | Handshake`,
+      description,
+      type: "profile",
+    },
+  };
+}
 
 export default async function ProfilePage({ params }: { params: Params }) {
   const { id } = await params;
