@@ -14,7 +14,8 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { getSellerStats } from "@/lib/supabase/actions";
 import { SellerStatsCard } from "@/components/profiles/seller-stats-card";
-import type { Profile } from "@/lib/types";
+import { ActivityFeed } from "@/components/shared/activity-feed";
+import type { Profile, ActivityFeedItem } from "@/lib/types";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -76,6 +77,16 @@ export default async function DashboardPage() {
     myListings = (listings.data ?? []) as Record<string, unknown>[];
   }
 
+  // Fetch activity feed
+  const { data: activityData } = await supabase
+    .from("activity_feed")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  const activities = (activityData ?? []) as ActivityFeedItem[];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -97,49 +108,56 @@ export default async function DashboardPage() {
       )}
 
       {/* Quick actions */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
-        <Button variant="outline" className="h-auto py-4 justify-start" asChild>
-          <Link href="/listings">
-            <Search className="mr-3 h-5 w-5" />
-            <div className="text-left">
-              <p className="font-medium">Browse Services</p>
-              <p className="text-xs text-muted-foreground">
-                Find someone for a task
-              </p>
-            </div>
-          </Link>
-        </Button>
+      <Card className="mb-8 shadow-md">
+        <CardHeader>
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <Button variant="outline" className="h-auto py-4 justify-start" asChild>
+              <Link href="/listings">
+                <Search className="mr-3 h-5 w-5" />
+                <div className="text-left">
+                  <p className="font-medium">Browse Services</p>
+                  <p className="text-xs text-muted-foreground">
+                    Find someone for a task
+                  </p>
+                </div>
+              </Link>
+            </Button>
 
-        {profile.is_seller && (
-          <Button
-            variant="outline"
-            className="h-auto py-4 justify-start"
-            asChild
-          >
-            <Link href="/listings/new">
-              <Plus className="mr-3 h-5 w-5" />
-              <div className="text-left">
-                <p className="font-medium">Create Listing</p>
-                <p className="text-xs text-muted-foreground">
-                  Offer a new service
-                </p>
-              </div>
-            </Link>
-          </Button>
-        )}
+            {profile.is_seller && (
+              <Button
+                variant="outline"
+                className="h-auto py-4 justify-start"
+                asChild
+              >
+                <Link href="/listings/new">
+                  <Plus className="mr-3 h-5 w-5" />
+                  <div className="text-left">
+                    <p className="font-medium">Create Listing</p>
+                    <p className="text-xs text-muted-foreground">
+                      Offer a new service
+                    </p>
+                  </div>
+                </Link>
+              </Button>
+            )}
 
-        <Button variant="outline" className="h-auto py-4 justify-start" asChild>
-          <Link href="/jobs">
-            <Briefcase className="mr-3 h-5 w-5" />
-            <div className="text-left">
-              <p className="font-medium">My Jobs</p>
-              <p className="text-xs text-muted-foreground">
-                View requests & deals
-              </p>
-            </div>
-          </Link>
-        </Button>
-      </div>
+            <Button variant="outline" className="h-auto py-4 justify-start" asChild>
+              <Link href="/jobs">
+                <Briefcase className="mr-3 h-5 w-5" />
+                <div className="text-left">
+                  <p className="font-medium">My Jobs</p>
+                  <p className="text-xs text-muted-foreground">
+                    View requests & deals
+                  </p>
+                </div>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* My Requests */}
@@ -289,6 +307,11 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         )}
+      </div>
+
+      {/* Activity Feed */}
+      <div className="mt-6">
+        <ActivityFeed activities={activities} />
       </div>
     </div>
   );

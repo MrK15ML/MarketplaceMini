@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ListingCard } from "@/components/listings/listing-card";
 import { ListingFilters } from "@/components/listings/listing-filters";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ListingCardSkeleton } from "@/components/listings/listing-card-skeleton";
 import type { ListingWithSeller } from "@/lib/types";
 
 type SearchParams = Promise<{
@@ -142,7 +143,7 @@ function GridSkeleton() {
   return (
     <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {Array.from({ length: 6 }).map((_, i) => (
-        <Skeleton key={i} className="h-48 rounded-lg" />
+        <ListingCardSkeleton key={i} />
       ))}
     </div>
   );

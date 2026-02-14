@@ -8,6 +8,7 @@ import { ReviewList } from "@/components/profiles/review-list";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ReportDialog } from "@/components/shared/report-dialog";
+import { RatingBreakdown } from "@/components/reviews/rating-breakdown";
 import type { Profile, ListingWithSeller, ReviewWithReviewer, Qualification } from "@/lib/types";
 
 type Params = Promise<{ id: string }>;
@@ -109,7 +110,15 @@ export default async function ProfilePage({ params }: { params: Params }) {
             </p>
           )}
         </TabsContent>
-        <TabsContent value="reviews" className="mt-4">
+        <TabsContent value="reviews" className="mt-4 space-y-6">
+          <RatingBreakdown
+            avgRating={profile.avg_rating}
+            avgCommunication={profile.avg_communication}
+            avgQuality={profile.avg_quality}
+            avgReliability={profile.avg_reliability}
+            totalReviews={profile.total_reviews}
+          />
+          {reviews.length > 0 && <Separator />}
           <ReviewList reviews={reviews} />
         </TabsContent>
       </Tabs>

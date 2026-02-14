@@ -43,7 +43,7 @@ export function FeaturedProviders({
 
             return (
               <Link key={provider.id} href={`/profile/${provider.id}`}>
-                <Card className="hover:border-primary/50 transition-colors h-full">
+                <Card className="hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 h-full">
                   <CardContent className="p-6 text-center">
                     <Avatar className="h-14 w-14 mx-auto mb-3">
                       <AvatarImage src={provider.avatar_url ?? undefined} />

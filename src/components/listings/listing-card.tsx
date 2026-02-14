@@ -1,11 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Wifi } from "lucide-react";
 import { CategoryBadge } from "@/components/listings/category-badge";
 import { PriceDisplay } from "@/components/listings/price-display";
+import { ListingTags } from "@/components/listings/listing-tags";
 import { TrustTierBadge } from "@/components/profiles/trust-tier-badge";
+import { getCategoryConfig } from "@/lib/constants/categories";
 import type { ListingWithSeller } from "@/lib/types";
 
 export function ListingCard({ listing }: { listing: ListingWithSeller }) {
@@ -17,12 +20,48 @@ export function ListingCard({ listing }: { listing: ListingWithSeller }) {
     .toUpperCase()
     .slice(0, 2);
 
+  const catConfig = getCategoryConfig(listing.category);
+  const CatIcon = catConfig?.icon;
+
   return (
     <Link href={`/listing/${listing.id}`}>
-      <Card className="hover:border-primary/50 transition-colors h-full">
+      <Card className="hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 h-full overflow-hidden">
+        {/* Image or placeholder */}
+        {listing.cover_image_url ? (
+          <div className="relative h-40 w-full">
+            <Image
+              src={listing.cover_image_url}
+              alt={listing.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            />
+            <div className="absolute top-3 left-3">
+              <CategoryBadge category={listing.category} />
+            </div>
+            {listing.tags && listing.tags.length > 0 && (
+              <div className="absolute top-3 right-3">
+                <ListingTags tags={listing.tags} />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="h-32 bg-muted/50 flex items-center justify-center relative">
+            {CatIcon && <CatIcon className="h-10 w-10 text-muted-foreground/30" />}
+            <div className="absolute top-3 left-3">
+              <CategoryBadge category={listing.category} />
+            </div>
+            {listing.tags && listing.tags.length > 0 && (
+              <div className="absolute top-3 right-3">
+                <ListingTags tags={listing.tags} />
+              </div>
+            )}
+          </div>
+        )}
+
         <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <CategoryBadge category={listing.category} />
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold line-clamp-1 flex-1">{listing.title}</h3>
             <PriceDisplay
               pricingType={listing.pricing_type}
               priceFixed={listing.price_fixed}
@@ -32,7 +71,6 @@ export function ListingCard({ listing }: { listing: ListingWithSeller }) {
             />
           </div>
 
-          <h3 className="font-semibold mb-1 line-clamp-1">{listing.title}</h3>
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {listing.description}
           </p>

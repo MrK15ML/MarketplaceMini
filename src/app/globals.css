@@ -49,6 +49,18 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* Brand colors */
+  --brand-start: oklch(0.65 0.15 175);
+  --brand-end: oklch(0.55 0.18 250);
+  --brand-accent: oklch(0.60 0.16 210);
+
+  /* Elevation shadows */
+  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.03);
+  --shadow-sm: 0 1px 3px 0 oklch(0 0 0 / 0.04), 0 1px 2px -1px oklch(0 0 0 / 0.04);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.05), 0 2px 4px -2px oklch(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.06), 0 4px 6px -4px oklch(0 0 0 / 0.06);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -139,4 +151,43 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.2s ease-out;
+}
+
+/* Page transition animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Brand gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

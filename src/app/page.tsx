@@ -51,7 +51,12 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="flex-1 flex items-center justify-center px-4 py-20 md:py-32">
+      <section className="flex-1 flex items-center justify-center px-4 py-20 md:py-32 relative overflow-hidden">
+        {/* Background gradient orbs */}
+        <div className="absolute inset-0 -z-10 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl" style={{background:'var(--brand-accent)', opacity:0.05}} />
+          <div className="absolute bottom-1/4 right-1/3 w-80 h-80 rounded-full blur-3xl" style={{background:'var(--brand-start)', opacity:0.04}} />
+        </div>
         <div className="container mx-auto text-center max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm text-muted-foreground mb-6">
             <Handshake className="h-4 w-4" />
@@ -60,14 +65,14 @@ export default function LandingPage() {
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
             Find trusted services.
             <br />
-            <span className="text-muted-foreground">Agree on your terms.</span>
+            <span className="text-gradient">Agree on your terms.</span>
           </h1>
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
             Browse qualified service providers, negotiate directly, and seal the
             deal with a structured handshake. No middleman fees, no surprises.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" asChild>
+            <Button size="lg" className="bg-gradient-to-r from-[var(--brand-start)] to-[var(--brand-end)] text-white hover:opacity-90 transition-opacity border-0" asChild>
               <Link href="/signup">
                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -134,7 +139,7 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {CATEGORIES.map((cat) => (
               <Link key={cat.value} href={`/listings?category=${cat.value}`}>
-                <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+                <Card className="hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full">
                   <CardContent className="p-6">
                     <cat.icon className="h-8 w-8 mb-3 text-primary" />
                     <h3 className="font-semibold mb-1">{cat.label}</h3>
@@ -195,7 +200,7 @@ export default function LandingPage() {
             Join Handshake today and connect with trusted service providers in
             Wellington.
           </p>
-          <Button size="lg" asChild>
+          <Button size="lg" className="bg-gradient-to-r from-[var(--brand-start)] to-[var(--brand-end)] text-white hover:opacity-90 transition-opacity border-0" asChild>
             <Link href="/signup">
               Create your free account
               <ArrowRight className="ml-2 h-4 w-4" />

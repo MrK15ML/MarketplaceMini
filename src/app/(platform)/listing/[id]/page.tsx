@@ -1,23 +1,22 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CategoryBadge } from "@/components/listings/category-badge";
 import { PriceDisplay } from "@/components/listings/price-display";
 import {
-  Star,
   MapPin,
   Wifi,
-  Clock,
   Shield,
   Pencil,
   Send,
 } from "lucide-react";
 import { ReportDialog } from "@/components/shared/report-dialog";
+import { TrustProfileCard } from "@/components/profiles/trust-profile-card";
 import type { Listing, Profile, Qualification } from "@/lib/types";
 
 type Params = Promise<{ id: string }>;
@@ -58,20 +57,32 @@ export default async function ListingDetailPage({
   ]);
 
   const seller = sellerData as Profile | null;
+
+  // Fire-and-forget view count increment (atomic)
+  supabase
+    .from("listings")
+    .update({ view_count: (listing.view_count || 0) + 1 })
+    .eq("id", id)
+    .then(() => {});
   const qualifications = (qualificationsData ?? []) as Qualification[];
 
   if (!seller) notFound();
 
   const isOwner = user?.id === listing.seller_id;
-  const initials = seller.display_name
-    .split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 
   return (
     <div className="max-w-4xl mx-auto">
+      {listing.cover_image_url && (
+        <div className="relative h-64 md:h-80 w-full rounded-xl overflow-hidden mb-6">
+          <Image
+            src={listing.cover_image_url}
+            alt={listing.title}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+      )}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
@@ -152,44 +163,7 @@ export default async function ListingDetailPage({
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Seller card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">About the seller</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href={`/profile/${seller.id}`}
-                className="flex items-center gap-3 mb-3"
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={seller.avatar_url ?? undefined} />
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{seller.display_name}</p>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {seller.avg_rating > 0 && (
-                      <span className="flex items-center gap-0.5">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        {Number(seller.avg_rating).toFixed(1)} ({seller.total_reviews})
-                      </span>
-                    )}
-                    {seller.location_city && (
-                      <span className="flex items-center gap-0.5">
-                        <MapPin className="h-3 w-3" />
-                        {seller.location_city}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-              {seller.bio && (
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {seller.bio}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <TrustProfileCard seller={seller} variant="full" />
 
           {/* Action buttons */}
           <Card>

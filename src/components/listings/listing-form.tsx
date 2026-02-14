@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/shared/image-upload";
 import {
   Select,
   SelectContent,
@@ -38,6 +40,9 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
   const router = useRouter();
   const supabase = createClient();
   const isEditing = !!listing;
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(
+    listing?.cover_image_url ?? null
+  );
 
   const form = useForm<ListingFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,6 +85,7 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
       location_radius_km: values.is_remote ? null : values.location_radius_km ?? null,
       requires_license: values.requires_license,
       license_type: values.requires_license ? values.license_type || null : null,
+      cover_image_url: coverImageUrl,
     };
 
     if (isEditing) {
@@ -115,6 +121,22 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Cover Image */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Cover Image</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload
+              bucket="listing-images"
+              folder={userId}
+              currentUrl={coverImageUrl}
+              onUpload={(url) => setCoverImageUrl(url)}
+              onRemove={() => setCoverImageUrl(null)}
+            />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Service Details</CardTitle>

@@ -13,6 +13,9 @@ export type Database = {
           is_seller: boolean;
           is_verified: boolean;
           avg_rating: number;
+          avg_communication: number;
+          avg_quality: number;
+          avg_reliability: number;
           total_reviews: number;
           handshake_score: number;
           total_completed_deals: number;
@@ -32,6 +35,9 @@ export type Database = {
           is_seller?: boolean;
           is_verified?: boolean;
           avg_rating?: number;
+          avg_communication?: number;
+          avg_quality?: number;
+          avg_reliability?: number;
           total_reviews?: number;
           handshake_score?: number;
           total_completed_deals?: number;
@@ -51,6 +57,9 @@ export type Database = {
           is_seller?: boolean;
           is_verified?: boolean;
           avg_rating?: number;
+          avg_communication?: number;
+          avg_quality?: number;
+          avg_reliability?: number;
           total_reviews?: number;
           handshake_score?: number;
           total_completed_deals?: number;
@@ -80,6 +89,11 @@ export type Database = {
           requires_license: boolean;
           license_type: string | null;
           is_active: boolean;
+          cover_image_url: string | null;
+          images: string[] | null;
+          tags: string[];
+          view_count: number;
+          request_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -101,6 +115,11 @@ export type Database = {
           requires_license?: boolean;
           license_type?: string | null;
           is_active?: boolean;
+          cover_image_url?: string | null;
+          images?: string[] | null;
+          tags?: string[];
+          view_count?: number;
+          request_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -122,6 +141,11 @@ export type Database = {
           requires_license?: boolean;
           license_type?: string | null;
           is_active?: boolean;
+          cover_image_url?: string | null;
+          images?: string[] | null;
+          tags?: string[];
+          view_count?: number;
+          request_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -445,6 +469,9 @@ export type Database = {
           reviewer_id: string;
           reviewee_id: string;
           rating: number;
+          rating_communication: number | null;
+          rating_quality: number | null;
+          rating_reliability: number | null;
           comment: string | null;
           created_at: string;
         };
@@ -454,6 +481,9 @@ export type Database = {
           reviewer_id: string;
           reviewee_id: string;
           rating: number;
+          rating_communication?: number | null;
+          rating_quality?: number | null;
+          rating_reliability?: number | null;
           comment?: string | null;
           created_at?: string;
         };
@@ -463,6 +493,9 @@ export type Database = {
           reviewer_id?: string;
           reviewee_id?: string;
           rating?: number;
+          rating_communication?: number | null;
+          rating_quality?: number | null;
+          rating_reliability?: number | null;
           comment?: string | null;
           created_at?: string;
         };
@@ -586,6 +619,44 @@ export type Database = {
           },
         ];
       };
+      activity_feed: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          description: string | null;
+          metadata: unknown | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          description?: string | null;
+          metadata?: unknown | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          title?: string;
+          description?: string | null;
+          metadata?: unknown | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "activity_feed_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -653,6 +724,9 @@ export type ReportUpdate = Database["public"]["Tables"]["reports"]["Update"];
 export type Verification = Database["public"]["Tables"]["verifications"]["Row"];
 export type VerificationInsert = Database["public"]["Tables"]["verifications"]["Insert"];
 export type VerificationUpdate = Database["public"]["Tables"]["verifications"]["Update"];
+
+export type ActivityFeedItem = Database["public"]["Tables"]["activity_feed"]["Row"];
+export type ActivityFeedInsert = Database["public"]["Tables"]["activity_feed"]["Insert"];
 
 // ============================================
 // Domain-specific types

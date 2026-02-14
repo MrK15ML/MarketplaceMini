@@ -51,4 +51,6 @@ export type {
   ListingSortOption,
   SellerStats,
   PlatformAverages,
+  ActivityFeedItem,
+  ActivityFeedInsert,
 } from "./database";

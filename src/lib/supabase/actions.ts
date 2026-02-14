@@ -405,6 +405,9 @@ export async function transitionJobStatus(input: {
 export async function submitReview(input: {
   dealId: string;
   rating: number;
+  rating_communication?: number;
+  rating_quality?: number;
+  rating_reliability?: number;
   comment?: string;
 }) {
   const supabase = await createClient();
@@ -448,28 +451,16 @@ export async function submitReview(input: {
     reviewer_id: user.id,
     reviewee_id: revieweeId,
     rating: input.rating,
+    rating_communication: input.rating_communication || null,
+    rating_quality: input.rating_quality || null,
+    rating_reliability: input.rating_reliability || null,
     comment: input.comment || null,
   });
 
   if (error) return { error: error.message };
 
-  // Update reviewee's average rating
-  const { data: allReviews } = await supabase
-    .from("reviews")
-    .select("rating")
-    .eq("reviewee_id", revieweeId);
-
-  if (allReviews && allReviews.length > 0) {
-    const ratings = allReviews.map((r: { rating: number }) => r.rating);
-    const avg = ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length;
-    await supabase
-      .from("profiles")
-      .update({
-        avg_rating: Math.round(avg * 100) / 100,
-        total_reviews: ratings.length,
-      })
-      .eq("id", revieweeId);
-  }
+  // Update reviewee's average rating using DB function (handles category averages)
+  await supabase.rpc("update_profile_rating", { p_reviewee_id: revieweeId });
 
   // Check if both parties reviewed — transition to "reviewed"
   const { data: reviews } = await supabase
