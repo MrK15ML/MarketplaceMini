@@ -43,6 +43,10 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(
     listing?.cover_image_url ?? null
   );
+  const [instantBook, setInstantBook] = useState(listing?.instant_book ?? false);
+  const [instantBookPrice, setInstantBookPrice] = useState<string>(
+    listing?.instant_book_price != null ? String(listing.instant_book_price) : ""
+  );
 
   const form = useForm<ListingFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,6 +90,8 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
       requires_license: values.requires_license,
       license_type: values.requires_license ? values.license_type || null : null,
       cover_image_url: coverImageUrl,
+      instant_book: instantBook,
+      instant_book_price: instantBook ? parseFloat(instantBookPrice) || null : null,
     };
 
     if (isEditing) {
@@ -461,6 +467,51 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
                   />
                 )}
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Instant Book */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Instant Book</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg border p-4">
+              <div>
+                <p className="text-sm font-medium">Enable Instant Book</p>
+                <p className="text-sm text-muted-foreground">
+                  Customers can book immediately at a set price
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={instantBook}
+                onChange={(e) => setInstantBook(e.target.checked)}
+                className="h-5 w-5 rounded border-gray-300"
+              />
+            </div>
+
+            {instantBook && (
+              <div>
+                <label className="text-sm font-medium">
+                  Instant Book Price (NZD)
+                </label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  className="mt-1.5"
+                  value={instantBookPrice}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9.]/g, "");
+                    setInstantBookPrice(raw);
+                  }}
+                />
+                <p className="text-sm text-muted-foreground mt-1.5">
+                  The fixed price customers pay when using Instant Book
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>

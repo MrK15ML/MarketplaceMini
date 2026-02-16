@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { ReportDialog } from "@/components/shared/report-dialog";
 import { TrustProfileCard } from "@/components/profiles/trust-profile-card";
+import { SaveSellerButton } from "@/components/shared/save-seller-button";
+import { InstantBookButton } from "@/components/listings/instant-book-button";
 import type { Listing, Profile, Qualification } from "@/lib/types";
 import type { Metadata } from "next";
 
@@ -100,6 +102,18 @@ export default async function ListingDetailPage({
       .neq("id", listing.id)
       .limit(3),
   ]);
+
+  // Check if user has saved this seller
+  let isSaved = false;
+  if (user) {
+    const { data: savedData } = await supabase
+      .from("saved_sellers")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("seller_id", listing.seller_id)
+      .single();
+    isSaved = !!savedData;
+  }
 
   const seller = sellerData as Profile | null;
 
@@ -208,23 +222,38 @@ export default async function ListingDetailPage({
 
           {/* Action buttons */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-4 space-y-3">
               {isOwner ? (
-                <div className="space-y-2">
-                  <Button className="w-full" variant="outline" asChild>
-                    <Link href={`/listing/${listing.id}/edit`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit Listing
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <Button className="w-full" asChild>
-                  <Link href={`/jobs?new=true&listing=${listing.id}`}>
-                    <Send className="mr-2 h-4 w-4" />
-                    Request This Service
+                <Button className="w-full" variant="outline" asChild>
+                  <Link href={`/listing/${listing.id}/edit`}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Listing
                   </Link>
                 </Button>
+              ) : (
+                <>
+                  {listing.instant_book && listing.instant_book_price ? (
+                    <InstantBookButton
+                      listingId={listing.id}
+                      listingTitle={listing.title}
+                      price={listing.instant_book_price}
+                      currency={listing.currency}
+                    />
+                  ) : null}
+                  <Button className="w-full" variant={listing.instant_book ? "outline" : "default"} asChild>
+                    <Link href={`/jobs?new=true&listing=${listing.id}`}>
+                      <Send className="mr-2 h-4 w-4" />
+                      {listing.instant_book ? "Custom Request" : "Request This Service"}
+                    </Link>
+                  </Button>
+                  {user && (
+                    <SaveSellerButton
+                      sellerId={listing.seller_id}
+                      initialSaved={isSaved}
+                      variant="full"
+                    />
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

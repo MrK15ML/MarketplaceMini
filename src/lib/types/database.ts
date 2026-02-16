@@ -92,6 +92,8 @@ export type Database = {
           cover_image_url: string | null;
           images: string[] | null;
           tags: string[];
+          instant_book: boolean;
+          instant_book_price: number | null;
           view_count: number;
           request_count: number;
           created_at: string;
@@ -118,6 +120,8 @@ export type Database = {
           cover_image_url?: string | null;
           images?: string[] | null;
           tags?: string[];
+          instant_book?: boolean;
+          instant_book_price?: number | null;
           view_count?: number;
           request_count?: number;
           created_at?: string;
@@ -144,6 +148,8 @@ export type Database = {
           cover_image_url?: string | null;
           images?: string[] | null;
           tags?: string[];
+          instant_book?: boolean;
+          instant_book_price?: number | null;
           view_count?: number;
           request_count?: number;
           created_at?: string;
@@ -657,6 +663,86 @@ export type Database = {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          href: string | null;
+          metadata: unknown | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body?: string | null;
+          href?: string | null;
+          metadata?: unknown | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: string;
+          title?: string;
+          body?: string | null;
+          href?: string | null;
+          metadata?: unknown | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      saved_sellers: {
+        Row: {
+          id: string;
+          user_id: string;
+          seller_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          seller_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          seller_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "saved_sellers_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "saved_sellers_seller_id_fkey";
+            columns: ["seller_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -679,6 +765,10 @@ export type Database = {
       increment_listing_view_count: {
         Args: { p_listing_id: string };
         Returns: undefined;
+      };
+      instant_book: {
+        Args: { p_listing_id: string; p_customer_id: string; p_description?: string };
+        Returns: string;
       };
     };
     Enums: Record<string, never>;
@@ -732,6 +822,11 @@ export type VerificationUpdate = Database["public"]["Tables"]["verifications"]["
 export type ActivityFeedItem = Database["public"]["Tables"]["activity_feed"]["Row"];
 export type ActivityFeedInsert = Database["public"]["Tables"]["activity_feed"]["Insert"];
 
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
+
+export type SavedSeller = Database["public"]["Tables"]["saved_sellers"]["Row"];
+
 // ============================================
 // Domain-specific types
 // ============================================
@@ -747,6 +842,7 @@ export type MessageType = "text" | "offer_notification" | "status_change" | "sys
 export type ReportStatus = "open" | "investigating" | "resolved" | "dismissed";
 export type VerificationStatus = "pending" | "verified" | "rejected";
 export type VerificationType = "identity" | "email" | "phone" | "license";
+export type NotificationType = "new_request" | "new_offer" | "offer_accepted" | "offer_declined" | "new_message" | "review_received" | "job_completed" | "job_cancelled";
 
 export type AvailabilityWindow = {
   day: string;

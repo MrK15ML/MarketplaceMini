@@ -53,4 +53,8 @@ export type {
   PlatformAverages,
   ActivityFeedItem,
   ActivityFeedInsert,
+  Notification,
+  NotificationInsert,
+  NotificationType,
+  SavedSeller,
 } from "./database";

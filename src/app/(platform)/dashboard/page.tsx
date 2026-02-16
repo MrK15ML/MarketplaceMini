@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/jobs/status-badge";
 import { CategoryBadge } from "@/components/listings/category-badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Plus,
   Search,
   Briefcase,
   ArrowRight,
+  Heart,
+  Star,
+  BadgeCheck,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getSellerStats } from "@/lib/supabase/actions";
@@ -77,15 +81,24 @@ export default async function DashboardPage() {
     myListings = (listings.data ?? []) as Record<string, unknown>[];
   }
 
-  // Fetch activity feed
-  const { data: activityData } = await supabase
-    .from("activity_feed")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(10);
+  // Fetch activity feed + saved sellers in parallel
+  const [{ data: activityData }, { data: savedData }] = await Promise.all([
+    supabase
+      .from("activity_feed")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("saved_sellers")
+      .select("seller_id, created_at, seller:profiles!seller_id(id, display_name, avatar_url, location_city, avg_rating, total_reviews, is_verified)")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(6),
+  ]);
 
   const activities = (activityData ?? []) as ActivityFeedItem[];
+  const savedSellers = (savedData ?? []) as { seller_id: string; seller: { id: string; display_name: string; avatar_url: string | null; location_city: string | null; avg_rating: number; total_reviews: number; is_verified: boolean } | null }[];
 
   return (
     <div>
@@ -308,6 +321,57 @@ export default async function DashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Saved Providers */}
+      {savedSellers.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Heart className="h-4 w-4 text-red-500" />
+              Saved Providers
+            </CardTitle>
+            <Link
+              href="/listings"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Browse more <ArrowRight className="inline h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {savedSellers.map(({ seller }) => {
+                if (!seller) return null;
+                const initials = seller.display_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+                return (
+                  <Link key={seller.id} href={`/profile/${seller.id}`}>
+                    <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={seller.avatar_url ?? undefined} />
+                        <AvatarFallback>{initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm font-medium truncate">{seller.display_name}</span>
+                          {seller.is_verified && <BadgeCheck className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {seller.avg_rating > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              {Number(seller.avg_rating).toFixed(1)}
+                            </span>
+                          )}
+                          {seller.location_city && <span>{seller.location_city}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Activity Feed */}
       <div className="mt-6">

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "@/components/shared/user-menu";
 import { UnreadBadge } from "@/components/shared/unread-badge";
 import { MobileNav } from "@/components/shared/mobile-nav";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import type { Profile } from "@/lib/types";
 
 export async function Navbar() {
@@ -68,7 +69,10 @@ export async function Navbar() {
           )}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {user && (
+            <NotificationBell userId={user.id} />
+          )}
           {user && profile ? (
             <UserMenu profile={profile} />
           ) : (

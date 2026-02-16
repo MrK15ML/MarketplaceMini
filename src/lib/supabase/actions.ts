@@ -117,6 +117,16 @@ export async function sendMessage(input: {
     });
   }
 
+  // Notify other party about new message
+  const recipientId = job.customer_id === user.id ? job.seller_id : job.customer_id;
+  await supabase.from("notifications").insert({
+    user_id: recipientId,
+    type: "new_message",
+    title: "New message",
+    body: content.slice(0, 100),
+    href: `/jobs/${input.jobRequestId}`,
+  }).then(() => {}); // fire-and-forget
+
   revalidatePath(`/jobs/${input.jobRequestId}`);
   return {};
 }
@@ -206,6 +216,15 @@ export async function createOffer(input: {
     message_type: "offer_notification",
   });
 
+  // Notify customer
+  await supabase.from("notifications").insert({
+    user_id: job.customer_id,
+    type: "new_offer",
+    title: "New offer received",
+    body: `$${input.price} — ${input.scopeDescription.slice(0, 80)}`,
+    href: `/jobs/${input.jobRequestId}`,
+  }).then(() => {});
+
   revalidatePath(`/jobs/${input.jobRequestId}`);
   return { offerId: (offer as { id: string }).id };
 }
@@ -242,6 +261,15 @@ export async function acceptOffer(input: { offerId: string }) {
     content: `Offer v${offer.version} accepted — deal created!`,
     message_type: "status_change",
   });
+
+  // Notify seller that their offer was accepted
+  await supabase.from("notifications").insert({
+    user_id: offer.seller_id,
+    type: "offer_accepted",
+    title: "Offer accepted!",
+    body: `Your offer for $${offer.price} was accepted. Time to get started!`,
+    href: `/jobs/${offer.job_request_id}`,
+  }).then(() => {});
 
   revalidatePath(`/jobs/${offer.job_request_id}`);
   return { dealId: dealId as string };
@@ -605,6 +633,153 @@ export async function getSellerStats(sellerId: string): Promise<{
   const averages = avgRes.data as import("@/lib/types").PlatformAverages | null;
 
   return { stats, averages };
+}
+
+// ============================================
+// Notifications
+// ============================================
+
+export async function createNotification(input: {
+  userId: string;
+  type: string;
+  title: string;
+  body?: string;
+  href?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("notifications").insert({
+    user_id: input.userId,
+    type: input.type,
+    title: input.title,
+    body: input.body || null,
+    href: input.href || null,
+    metadata: input.metadata || null,
+  });
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function markNotificationsRead(notificationIds?: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  let query = supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  if (notificationIds && notificationIds.length > 0) {
+    query = query.in("id", notificationIds);
+  }
+
+  const { error } = await query;
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function getUnreadNotificationCount() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { count: 0 };
+
+  const { count } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  return { count: count ?? 0 };
+}
+
+// ============================================
+// Saved Sellers (Favorites)
+// ============================================
+
+export async function toggleSaveSeller(sellerId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated", saved: false };
+
+  if (user.id === sellerId) return { error: "Cannot save yourself", saved: false };
+
+  // Check if already saved
+  const { data: existing } = await supabase
+    .from("saved_sellers")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("seller_id", sellerId)
+    .single();
+
+  if (existing) {
+    // Unsave
+    await supabase
+      .from("saved_sellers")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("seller_id", sellerId);
+    return { saved: false };
+  } else {
+    // Save
+    const { error } = await supabase
+      .from("saved_sellers")
+      .insert({ user_id: user.id, seller_id: sellerId });
+    if (error) return { error: error.message, saved: false };
+    return { saved: true };
+  }
+}
+
+// ============================================
+// Instant Book
+// ============================================
+
+export async function instantBook(input: {
+  listingId: string;
+  description?: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: dealId, error } = await supabase.rpc("instant_book", {
+    p_listing_id: input.listingId,
+    p_customer_id: user.id,
+    p_description: input.description || "Instant booking",
+  });
+
+  if (error) return { error: error.message };
+
+  // Create notification for seller
+  const { data: listingData } = await supabase
+    .from("listings")
+    .select("seller_id, title")
+    .eq("id", input.listingId)
+    .single();
+
+  if (listingData) {
+    const listing = listingData as { seller_id: string; title: string };
+    // Get the job_request_id from the deal
+    const { data: dealData } = await supabase
+      .from("deals")
+      .select("job_request_id")
+      .eq("id", dealId as string)
+      .single();
+
+    const jobId = dealData ? (dealData as { job_request_id: string }).job_request_id : null;
+
+    await supabase.from("notifications").insert({
+      user_id: listing.seller_id,
+      type: "new_request",
+      title: "New instant booking!",
+      body: `Someone booked "${listing.title}" instantly.`,
+      href: jobId ? `/jobs/${jobId}` : "/jobs",
+    });
+  }
+
+  revalidatePath("/jobs");
+  return { dealId: dealId as string };
 }
 
 export async function getFeaturedProviders(limit: number = 6) {

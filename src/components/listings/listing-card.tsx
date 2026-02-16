@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Wifi, BadgeCheck, Clock, Sparkles } from "lucide-react";
+import { Star, MapPin, Wifi, BadgeCheck, Clock, Sparkles, Zap } from "lucide-react";
 import { CategoryBadge } from "@/components/listings/category-badge";
 import { PriceDisplay } from "@/components/listings/price-display";
 import { ListingTags } from "@/components/listings/listing-tags";
@@ -128,7 +128,13 @@ export function ListingCard({ listing }: { listing: ListingWithSeller }) {
 
           {/* Trust signals row */}
           <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {isNew && (
+            {listing.instant_book && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                <Zap className="h-3 w-3" />
+                Instant Book
+              </span>
+            )}
+            {isNew && !listing.instant_book && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                 <Sparkles className="h-3 w-3" />
                 New
