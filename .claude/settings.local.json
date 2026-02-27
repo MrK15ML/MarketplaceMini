@@ -35,7 +35,9 @@
       "Bash(do)",
       "Bash(echo:*)",
       "Bash(done)",
-      "Bash(npx next dev:*)"
+      "Bash(npx next dev:*)",
+      "Bash(find:*)",
+      "Bash(wc -l:*)"
     ]
   }
 }
