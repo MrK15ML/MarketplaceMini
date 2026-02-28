@@ -782,6 +782,85 @@ export async function instantBook(input: {
   return { dealId: dealId as string };
 }
 
+// ============================================
+// Listings
+// ============================================
+
+type ListingPayload = {
+  title: string;
+  description: string;
+  category: string;
+  subcategory: string | null;
+  pricing_type: string;
+  price_fixed: number | null;
+  price_min: number | null;
+  price_max: number | null;
+  is_remote: boolean;
+  location_radius_km: number | null;
+  requires_license: boolean;
+  license_type: string | null;
+  cover_image_url: string | null;
+  instant_book: boolean;
+  instant_book_price: number | null;
+};
+
+export async function createListing(payload: ListingPayload) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_seller")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.is_seller) return { error: "Only sellers can create listings" };
+
+  const { data, error } = await supabase
+    .from("listings")
+    .insert({ ...payload, seller_id: user.id })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("[createListing]", error.message);
+    return { error: "Failed to create listing" };
+  }
+
+  revalidatePath("/listings");
+  return { listingId: (data as { id: string }).id };
+}
+
+export async function updateListing(listingId: string, payload: ListingPayload) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: existing } = await supabase
+    .from("listings")
+    .select("seller_id")
+    .eq("id", listingId)
+    .single();
+
+  if (!existing) return { error: "Listing not found" };
+  if ((existing as { seller_id: string }).seller_id !== user.id) return { error: "Not authorized" };
+
+  const { error } = await supabase
+    .from("listings")
+    .update(payload)
+    .eq("id", listingId);
+
+  if (error) {
+    console.error("[updateListing]", error.message);
+    return { error: "Failed to update listing" };
+  }
+
+  revalidatePath(`/listing/${listingId}`);
+  revalidatePath("/listings");
+  return {};
+}
+
 export async function getFeaturedProviders(limit: number = 6) {
   const supabase = await createClient();
 

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "computedHash": "a7235898c50422ed8d3cf43cb640ecb591cce3220cf88d31256a59c16a20d8ea"
+    },
+    "cicd-pipeline-generator": {
+      "source": "ailabs-393/ai-labs-claude-skills",
+      "sourceType": "github",
+      "computedHash": "44bc43aad27639bcd52ebe4d71376aad7adc15d9a88ba81e13e2529f0dfbf713"
+    },
+    "epic-permissions": {
+      "source": "rubenpenap/epic-stack-agent-skills",
+      "sourceType": "github",
+      "computedHash": "b5aefc7aa9c37d6ff1548d70d9d46327861e7a61ca4fb79bda3955658725ff9d"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "25872a21881a950edc3db1f3329664d60405d539660ce05b3265db2de06a7dfd"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "payment-integration": {
+      "source": "404kidwiz/claude-supercode-skills",
+      "sourceType": "github",
+      "computedHash": "63c18053264d3d04106e2f25af216e8f47e856b943ebd75648196403a59a92f2"
+    },
+    "prisma-migration-assistant": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "024024bc2fa475f2750c8fa5e501c0df1b3f5282f0f4eaa3ff58ad56f59d1fee"
+    },
+    "rate-limiting-abuse-protection": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "565eefd3a90e2aafe9a9b0196ce4831ac055f50c1477970f27697c81fc0414a6"
+    },
+    "visual-regression-tester": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "833154f2ccbf3d3606b74c223efa96693a814a0714dd85a2bce7bd69bf8f3762"
+    }
+  }
+}

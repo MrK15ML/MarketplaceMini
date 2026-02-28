@@ -117,8 +117,11 @@ export default async function ListingDetailPage({
 
   const seller = sellerData as Profile | null;
 
-  // Fire-and-forget atomic view count increment
-  supabase.rpc("increment_listing_view_count", { p_listing_id: id }).then(() => {});
+  // Fire-and-forget atomic view count increment (authenticated sessions only —
+  // anon EXECUTE was revoked in migration 00010 to prevent bot inflation)
+  if (user) {
+    supabase.rpc("increment_listing_view_count", { p_listing_id: id }).then(() => {});
+  }
   const qualifications = (qualificationsData ?? []) as Qualification[];
 
   if (!seller) notFound();

@@ -65,7 +65,7 @@ export function ChatInput({
   }
 
   return (
-    <div className="border-t p-3 flex gap-2">
+    <div className="border-t p-3 flex gap-2 shrink-0">
       <Textarea
         value={content}
         onChange={handleChange}

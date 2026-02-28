@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CATEGORIES, PRICING_TYPES, LICENSED_TRADE_TYPES } from "@/lib/constants";
 import { listingSchema, type ListingFormValues } from "@/lib/validations/listing";
-import { createClient } from "@/lib/supabase/client";
+import { createListing, updateListing } from "@/lib/supabase/actions";
 import type { Listing } from "@/lib/types";
 
 type ListingFormProps = {
@@ -38,7 +38,6 @@ type ListingFormProps = {
 
 export function ListingForm({ listing, userId }: ListingFormProps) {
   const router = useRouter();
-  const supabase = createClient();
   const isEditing = !!listing;
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(
     listing?.cover_image_url ?? null
@@ -76,7 +75,6 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
 
   async function onSubmit(values: ListingFormValues) {
     const payload = {
-      seller_id: userId,
       title: values.title,
       description: values.description,
       category: values.category,
@@ -95,30 +93,21 @@ export function ListingForm({ listing, userId }: ListingFormProps) {
     };
 
     if (isEditing) {
-      const { error } = await supabase
-        .from("listings")
-        .update(payload)
-        .eq("id", listing.id);
-
+      const { error } = await updateListing(listing.id, payload);
       if (error) {
-        toast.error("Failed to update listing");
+        toast.error(error);
         return;
       }
       toast.success("Listing updated");
       router.push(`/listing/${listing.id}`);
     } else {
-      const { data, error } = await supabase
-        .from("listings")
-        .insert(payload)
-        .select("id")
-        .single();
-
-      if (error) {
-        toast.error("Failed to create listing");
+      const { listingId, error } = await createListing(payload);
+      if (error || !listingId) {
+        toast.error(error ?? "Failed to create listing");
         return;
       }
       toast.success("Listing created!");
-      router.push(`/listing/${data.id}`);
+      router.push(`/listing/${listingId}`);
     }
 
     router.refresh();

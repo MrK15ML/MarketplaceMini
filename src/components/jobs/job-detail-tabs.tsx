@@ -117,7 +117,7 @@ export function JobDetailTabs({
       </TabsList>
 
       <TabsContent value="chat">
-        <Card className="flex flex-col h-[450px]">
+        <Card className="flex flex-col min-h-[200px] h-[55dvh] max-h-[450px]">
           <ChatMessages
             messages={messages}
             currentUserId={currentUserId}

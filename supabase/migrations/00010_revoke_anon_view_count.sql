@@ -1,0 +1,26 @@
+-- Migration 00010: Security — restrict view count increment to authenticated users
+--
+-- Problem (Risk 1 — security audit 2026-02-28):
+--   Migration 00007 granted EXECUTE on increment_listing_view_count() to the
+--   anon role. Any unauthenticated script can call this RPC an unlimited number
+--   of times via PostgREST or the Supabase JS client, inflating any listing's
+--   view_count to an arbitrary value.
+--
+--   view_count is used in the idx_listings_view_count sort index and displayed
+--   as social proof on listing cards, making this a marketplace manipulation
+--   vector — a seller can make their own listing appear far more popular than
+--   competitors with no friction or authentication.
+--
+-- Fix:
+--   Revoke EXECUTE from the anon role. The authenticated grant from 00007 is
+--   retained so logged-in users can still trigger view counts normally.
+--   The listing/[id]/page.tsx server component is also guarded with an
+--   `if (user)` conditional so the RPC is only called for authenticated sessions.
+--
+-- Safety:
+--   Pure REVOKE — no rows altered, no policies dropped, no tables changed.
+--   Authenticated visitors continue to increment view counts as before.
+--   Unauthenticated visitors' page views are no longer counted (acceptable
+--   trade-off: the platform requires login for all meaningful actions).
+
+REVOKE EXECUTE ON FUNCTION public.increment_listing_view_count(UUID) FROM anon;

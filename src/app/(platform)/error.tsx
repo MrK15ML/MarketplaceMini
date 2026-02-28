@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
@@ -12,6 +13,8 @@ export default function PlatformError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     console.error("Platform error:", error);
   }, [error]);
@@ -29,7 +32,7 @@ export default function PlatformError({
             <Button onClick={reset} variant="default">
               Try again
             </Button>
-            <Button onClick={() => window.location.href = "/dashboard"} variant="outline">
+            <Button onClick={() => router.push("/dashboard")} variant="outline">
               Go to Dashboard
             </Button>
           </div>
